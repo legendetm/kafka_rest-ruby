@@ -5,9 +5,10 @@ module KafkaRest
   class Client
     attr_reader :endpoint, :username, :password
 
-    def initialize(endpoint, username = nil, password = nil)
+    def initialize(endpoint, username = nil, password = nil, headers = {})
       @endpoint = URI(endpoint)
       @username, @password = username, password
+      @headers = headers
     end
 
     def topic(name)
@@ -51,6 +52,9 @@ module KafkaRest
       end
 
       request = request_class.new(path)
+      @headers.each do |k, v|
+        request[k.to_s] = v.to_s
+      end
       request['Accept'.freeze] = accept || DEFAULT_ACCEPT_HEADER
       request['Content-Type'.freeze] = content_type || DEFAULT_CONTENT_TYPE_HEADER
       request.basic_auth(username, password) if username && password
