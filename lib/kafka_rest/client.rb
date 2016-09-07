@@ -99,5 +99,6 @@ module KafkaRest
 
     BINARY_CONTENT_TYPE = "application/vnd.kafka.binary.v1+json".freeze
     AVRO_CONTENT_TYPE   = "application/vnd.kafka.avro.v1+json".freeze
+    JSON_CONTENT_TYPE   = "application/vnd.kafka.json.v1+json".freeze
   end
 end

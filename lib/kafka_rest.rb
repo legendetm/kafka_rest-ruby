@@ -22,6 +22,7 @@ module KafkaRest
     50001 => (ZookeeperError        = Class.new(KafkaRest::ResponseError)),
     50002 => (KafkaError            = Class.new(KafkaRest::ResponseError)),
     50003 => (RetriableKafkaError   = Class.new(KafkaRest::ResponseError)),
+    50101 => (SSLEndpointError      = Class.new(KafkaRest::ResponseError)),
   }
 end
 
