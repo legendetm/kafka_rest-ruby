@@ -3,12 +3,12 @@ require 'json'
 
 module KafkaRest
   class Client
-    attr_reader :endpoint, :username, :password
+    attr_reader :endpoint, :username, :password, :host
 
-    def initialize(endpoint, username = nil, password = nil, headers = {})
+    def initialize(endpoint, username = nil, password = nil, host = nil)
       @endpoint = URI(endpoint)
       @username, @password = username, password
-      @headers = headers
+      @host = host
     end
 
     def topic(name)
@@ -52,11 +52,9 @@ module KafkaRest
       end
 
       request = request_class.new(path)
-      @headers.each do |k, v|
-        request[k.to_s] = v.to_s
-      end
       request['Accept'.freeze] = accept || DEFAULT_ACCEPT_HEADER
       request['Content-Type'.freeze] = content_type || DEFAULT_CONTENT_TYPE_HEADER
+      request['Host'.freeze] = host if host
       request.basic_auth(username, password) if username && password
       request.body = JSON.dump(body) if body
 
