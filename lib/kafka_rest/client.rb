@@ -93,12 +93,12 @@ module KafkaRest
       client.close
     end
 
-    DEFAULT_ACCEPT_HEADER = "application/vnd.kafka.v1+json".freeze
-    DEFAULT_CONTENT_TYPE_HEADER = "application/json".freeze
-    private_constant :DEFAULT_CONTENT_TYPE_HEADER, :DEFAULT_ACCEPT_HEADER
-
     BINARY_CONTENT_TYPE = "application/vnd.kafka.binary.v1+json".freeze
     AVRO_CONTENT_TYPE   = "application/vnd.kafka.avro.v1+json".freeze
     JSON_CONTENT_TYPE   = "application/vnd.kafka.json.v1+json".freeze
+
+    DEFAULT_ACCEPT_HEADER = JSON_CONTENT_TYPE
+    DEFAULT_CONTENT_TYPE_HEADER = JSON_CONTENT_TYPE
+    private_constant :DEFAULT_CONTENT_TYPE_HEADER, :DEFAULT_ACCEPT_HEADER
   end
 end
