@@ -5,10 +5,10 @@ module KafkaRest
   class Client
     attr_reader :endpoint, :username, :password, :host
 
-    def initialize(endpoint, username = nil, password = nil, host = nil)
+    def initialize(endpoint, **kwargs)
       @endpoint = URI(endpoint)
-      @username, @password = username, password
-      @host = host
+      @username, @password = kwargs[:username], kwargs[:password]
+      @host = kwargs[:host]
     end
 
     def topic(name)
@@ -86,19 +86,21 @@ module KafkaRest
       end
     end
 
-    def self.open(endpoint, username = nil, password = nil, &block)
-      client = self.new(endpoint, username, password)
+    def self.open(endpoint, **kwargs, &block)
+      client = new(endpoint, **kwargs)
       block.call(client)
     ensure
       client.close
     end
 
-    BINARY_CONTENT_TYPE = "application/vnd.kafka.binary.v1+json".freeze
-    AVRO_CONTENT_TYPE   = "application/vnd.kafka.avro.v1+json".freeze
-    JSON_CONTENT_TYPE   = "application/vnd.kafka.json.v1+json".freeze
+    BINARY_MESSAGE_CONTENT_TYPE = "application/vnd.kafka.binary.v1+json".freeze
+    AVRO_MESSAGE_CONTENT_TYPE   = "application/vnd.kafka.avro.v1+json".freeze
+    JSON_MESSAGE_CONTENT_TYPE   = "application/vnd.kafka.json.v1+json".freeze
 
-    DEFAULT_ACCEPT_HEADER = JSON_CONTENT_TYPE
-    DEFAULT_CONTENT_TYPE_HEADER = JSON_CONTENT_TYPE
+    JSON_REQUEST_CONTENT_TYPE   = "application/vnd.kafka.v1+json"
+
+    DEFAULT_ACCEPT_HEADER = JSON_REQUEST_CONTENT_TYPE
+    DEFAULT_CONTENT_TYPE_HEADER = JSON_REQUEST_CONTENT_TYPE
     private_constant :DEFAULT_CONTENT_TYPE_HEADER, :DEFAULT_ACCEPT_HEADER
   end
 end

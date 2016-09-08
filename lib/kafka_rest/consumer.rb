@@ -67,8 +67,10 @@ module KafkaRest
 
     def decode_embedded_format(value)
       case format
-        when :binary; Base64.strict_decode64(value)
-        else raise ArgumentError, "Unsupported format: #{format}"
+      when Format::BINARY then Base64.strict_decode64(value)
+      when Format::JSON then value
+      when Format::Avro then raise "Working on Avro :)"
+      else raise ArgumentError, "Unsupported format: #{format}"
       end
     end
   end
