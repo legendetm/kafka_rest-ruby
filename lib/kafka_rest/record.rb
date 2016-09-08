@@ -17,14 +17,10 @@ module KafkaRest
     end
 
     def as_json
-      json = { value: value }
+      json = { value: JSON.load(value) }
       json[:key] = key unless key.nil?
       json[:partition] = partition unless partition.nil?
       json
-    end
-
-    def as_avro
-
     end
   end
 end

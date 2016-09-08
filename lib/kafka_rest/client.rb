@@ -5,10 +5,10 @@ module KafkaRest
   class Client
     attr_reader :endpoint, :username, :password, :host
 
-    def initialize(endpoint, **kwargs)
+    def initialize(endpoint, username = nil, password = nil, host = nil)
       @endpoint = URI(endpoint)
-      @username, @password = kwargs[:username], kwargs[:password]
-      @host = kwargs[:host]
+      @username, @password = username, password
+      @host = host
     end
 
     def topic(name)
