@@ -3,12 +3,12 @@ require 'json'
 
 module KafkaRest
   class Client
-    attr_reader :endpoint, :username, :password, :host
+    attr_reader :endpoint, :username, :password, :headers
 
-    def initialize(endpoint, username = nil, password = nil, host = nil)
+    def initialize(endpoint, username = nil, password = nil, headers = {})
       @endpoint = URI(endpoint)
       @username, @password = username, password
-      @host = host
+      @headers = headers
     end
 
     def topic(name)
@@ -51,10 +51,9 @@ module KafkaRest
         else raise ArgumentError, "Unsupported request method"
       end
 
-      request = request_class.new(path)
-      request['Accept'.freeze] = accept || DEFAULT_ACCEPT_HEADER
-      request['Content-Type'.freeze] = content_type || DEFAULT_CONTENT_TYPE_HEADER
-      request['Host'.freeze] = host if host
+      request = request_class.new(path, headers)
+      request['Accept'] = accept || DEFAULT_ACCEPT_HEADER
+      request.content_type = content_type || DEFAULT_CONTENT_TYPE_HEADER
       request.basic_auth(username, password) if username && password
       request.body = JSON.dump(body) if body
 
@@ -93,14 +92,8 @@ module KafkaRest
       client.close
     end
 
-    BINARY_MESSAGE_CONTENT_TYPE = "application/vnd.kafka.binary.v1+json".freeze
-    AVRO_MESSAGE_CONTENT_TYPE   = "application/vnd.kafka.avro.v1+json".freeze
-    JSON_MESSAGE_CONTENT_TYPE   = "application/vnd.kafka.json.v1+json".freeze
-
-    JSON_REQUEST_CONTENT_TYPE   = "application/vnd.kafka.v1+json"
-
-    DEFAULT_ACCEPT_HEADER = JSON_REQUEST_CONTENT_TYPE
-    DEFAULT_CONTENT_TYPE_HEADER = JSON_REQUEST_CONTENT_TYPE
+    DEFAULT_ACCEPT_HEADER = 'application/vnd.kafka.v1+json, application/vnd.kafka+json; q=0.9, application/json; q=0.8'
+    DEFAULT_CONTENT_TYPE_HEADER = 'application/vnd.kafka.v1+json'
     private_constant :DEFAULT_CONTENT_TYPE_HEADER, :DEFAULT_ACCEPT_HEADER
   end
 end
