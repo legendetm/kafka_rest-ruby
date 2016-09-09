@@ -1,53 +1,54 @@
 module KafkaRest
+  class Partitions
+    attr_accessor :partitions
+    attr_reader :client, :topic
+
+    def initialize(client, topic)
+      @client = client
+      @topic = topic
+    end
+
+    def path
+      "/topics/#{topic.name}/partitions"
+    end
+
+    def list
+      partitions = client.request(:get, path)
+      @partitions = partitions.map do |p|
+        partition = Partition.new(client, topic, p.partition, p)
+      end
+    end
+  end
+
   class Partition
     include KafkaRest::Producer
 
     Replica = Struct.new(:broker, :leader, :in_sync)
 
-    attr_reader :client, :topic, :id
+    attr_reader :client, :topic, :id, :leader, :replicas
 
-    def initialize(client, topic, id)
+    def initialize(client, topic, id, response = nil)
       @client, @topic, @id = client, topic, id
-    end
-
-    def leader
-      sync unless @leader
-      @leader
-    end
-
-    def replicas
-      sync unless @replicas
-      @replicas
+      populate(response) if response
     end
 
     def path
       "/topics/#{topic.name}/partitions/#{id}"
     end
 
-    def sync
-      response = client.request(:get, path)
-      populate_from_json(response)
-    end
-
-    def populate_from_json(json_object)
-      @leader   = json_object.fetch(:leader)
-      @replicas = json_object.fetch(:replicas).map { |r| Replica.new(r.fetch(:broker), r.fetch(:leader), r.fetch(:in_sync)) }
+    def get
+      populate(client.request(:get, path))
       self
     end
 
-    def self.from_json(client, topic, json_object)
-      new(client, topic, json_object.fetch(:partition)).populate_from_json(json_object)
-    end
+    private
 
-    def ==(other)
-      return false unless other.is_a?(KafkaRest::Partition)
-      topic == other.topic && other.id == id
-    end
-
-    alias_method :eql?, :==
-
-    def hash
-      [topic, id].hash
+    def populate(response)
+      @leader   = response.fetch(:leader)
+      @replicas = response.fetch(:replicas).map do |r|
+        Replica.new(r.fetch(:broker), r.fetch(:leader), r.fetch(:in_sync))
+      end
     end
   end
 end
+

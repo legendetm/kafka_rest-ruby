@@ -1,26 +1,33 @@
 module KafkaRest
+  class Topics
+    attr_reader :client, :topics
+
+    def initialize(client)
+      @client = client
+    end
+
+    def path
+      '/topics'
+    end
+
+    def list
+      topics = client.request(:get, path)[:topics]
+      @topics = topics.map { |t| Topic.new(client, t) }
+    end
+
+    def topic(topic_name)
+      Topic.new(client, topic_name)
+    end
+  end
+
   class Topic
     include KafkaRest::Producer
 
-    attr_reader :client, :name
+    attr_reader :client, :configs, :name, :partitions
 
-    def initialize(client, name, partitions: nil, configs: nil)
+    def initialize(client, name)
       @client, @name = client, name
-      @partitions, @configs = partitions, configs
-    end
-
-    def configs
-      sync unless @configs
-      @configs
-    end
-
-    def partitions
-      sync unless @partitions
-      @partitions
-    end
-
-    def topic
-      self
+      @partitions = Partitions.new(client, self)
     end
 
     def partition(id)
@@ -31,25 +38,17 @@ module KafkaRest
       "/topics/#{name}"
     end
 
-    def ==(other)
-      return false unless other.is_a?(KafkaRest::Topic)
-      client == other.client && other.name == name
+    def to_s
+      "Topic #{name}"
     end
 
-    alias_method :eql?, :==
-
-    def hash
-      [client, topic.name].hash
-    end
-
-    private
-
-    def sync
+    def get
       response = client.request(:get, path)
-      @configs    = response.fetch(:configs)
+      @configs = response.fetch(:configs)
       @partitions = response.fetch(:partitions).map do |partition|
-        KafkaRest::Partition.from_json(client, self, partition)
+        Partition.new(client, self, partition.partition, partition)
       end
+      self
     end
   end
 end
