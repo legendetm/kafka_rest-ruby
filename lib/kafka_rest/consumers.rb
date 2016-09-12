@@ -13,32 +13,23 @@ module KafkaRest
     def create(name, format: nil, options = {})
       body = options.merge({name: name, format: format})
       instance_id = client.request(:post, path, body)[:instance_id]
-      Consumer.new(client, group, instance_id)
+      Consumer.new(client, group, instance_id) # This needs to be modified so that it can work with DC/OS
     end
   end
 
   class Consumer
     attr_reader :client, :group, :format, :instance_id, :base_uri
 
-    def initialize(temporary_client, group, instance_id, options = {})
-      @group = group
-      @messages_fetched = false
-      register(temporary_client, options)
+    def initialize(client, group, instance_id, options = {})
+      @client, @group, @instance_id, @options = client, group, instance_id, options
     end
 
-    def register(temporary_client, instance_id: nil, format: :binary, offset_reset: nil, auto_commit: nil)
-      payload = {}
-      payload['format']             = format ||:binary
-      payload['id']                 = instance_id  unless instance_id.nil?
-      payload['auto.offset.reset']  = offset_reset unless offset_reset.nil?
-      payload['auto.commit.enable'] = auto_commit  unless auto_commit.nil?
+    def path
+      "/consumers/#{group}/instances/#{instance_id}"
+    end
 
-      response = temporary_client.request(:post, "/consumers/#{group}", body: payload)
-
-      @format      = format || :binary
-      @instance_id = response.fetch(:instance_id)
-      @base_uri    = response.fetch(:base_uri)
-      @client      = KafkaRest::Client.new(@base_uri)
+    def commit_offsets
+      client.request(:post, "#{path}/offsets")
     end
 
     def consume(topic, &block)
@@ -66,29 +57,8 @@ module KafkaRest
       end
     end
 
-    def commit
-      client.request(:post, "/consumers/#{group}/instances/#{instance_id}/offsets")
-    end
-
-    def deregister
-      client.request(:delete, "/consumers/#{group}/instances/#{instance_id}")
-    end
-
-    def close
-      deregister
-      client.close
-      @client = nil
-    end
-
-    protected
-
-    def decode_embedded_format(value)
-      case format
-      when Format::BINARY then Base64.strict_decode64(value)
-      when Format::JSON then value
-      when Format::Avro then raise "Working on Avro :)"
-      else raise ArgumentError, "Unsupported format: #{format}"
-      end
+    def destroy
+      client.request(:delete, path)
     end
   end
 end

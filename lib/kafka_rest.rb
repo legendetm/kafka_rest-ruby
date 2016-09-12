@@ -26,9 +26,11 @@ module KafkaRest
   }
 end
 
-require 'kafka_rest/consumer'
+require 'kafka_rest/schema'
+require 'kafka_rest/brokers'
 require 'kafka_rest/client'
+require 'kafka_rest/consumers'
 require 'kafka_rest/producer'
-require 'kafka_rest/topic'
-require 'kafka_rest/partition'
-require 'kafka_rest/record'
+require 'kafka_rest/topics'
+require 'kafka_rest/partitions'
+require 'kafka_rest/message'
