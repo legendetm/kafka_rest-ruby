@@ -7,7 +7,7 @@ module KafkaRest
     end
 
     def list
-      broker_i = client.request(:get, '/brokers')[:brokers]
+      brokers = client.request(:get, '/brokers')[:brokers]
       @brokers = brokers.map { |b| Broker.new(b) }
     end
   end

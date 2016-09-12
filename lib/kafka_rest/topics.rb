@@ -11,7 +11,7 @@ module KafkaRest
     end
 
     def list
-      topics = client.request(:get, path)[:topics]
+      topics = client.request(:get, path)
       @topics = topics.map { |t| Topic.new(client, t) }
     end
 

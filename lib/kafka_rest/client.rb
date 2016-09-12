@@ -12,18 +12,11 @@ module KafkaRest
     end
 
     def topic(name)
-      KafkaRest::Topic.new(self, name)
-    end
-
-    def topics
-      request(:get, '/topics').inject({}) do |result, topic|
-        result[topic] = KafkaRest::Topic.new(self, topic)
-        result
-      end
+      Topics.new(self).topic(name)
     end
 
     def brokers
-      request(:get, '/brokers')[:brokers]
+      Brokers.new(self).list
     end
 
     def consumer(group, options = {})
@@ -56,6 +49,7 @@ module KafkaRest
       request.content_type = content_type || DEFAULT_CONTENT_TYPE_HEADER
       request.basic_auth(username, password) if username && password
       request.body = JSON.dump(body) if body
+      puts request.body
 
       case response = http.request(request)
       when Net::HTTPSuccess

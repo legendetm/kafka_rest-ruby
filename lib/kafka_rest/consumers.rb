@@ -1,9 +1,26 @@
 module KafkaRest
-  class Consumer
+  class Consumers
+    attr_reader :client, :group
 
+    def initialize(client, group)
+      @client, @group = client, group
+    end
+
+    def path
+      "/consumers/#{group}"
+    end
+
+    def create(name, format: nil, options = {})
+      body = options.merge({name: name, format: format})
+      instance_id = client.request(:post, path, body)[:instance_id]
+      Consumer.new(client, group, instance_id)
+    end
+  end
+
+  class Consumer
     attr_reader :client, :group, :format, :instance_id, :base_uri
 
-    def initialize(temporary_client, group, options = {})
+    def initialize(temporary_client, group, instance_id, options = {})
       @group = group
       @messages_fetched = false
       register(temporary_client, options)

@@ -2,65 +2,62 @@ module KafkaRest
   module Producer
 
     Response = Struct.new(:key_schema_id, :value_schema_id, :offsets)
+    Offset = Struct.new(:partition, :offset, :error_code, :error)
 
-    def produce(records, value_schema: nil, key_schema: nil, format: nil)
-      case format
-      when Format::BINARY then produce_binary(records)
-      when Format::AVRO then produce_avro(records, value_schema, key_schema)
-      when Format::JSON then produce_json(records)
-      else raise ArgumentError, "Serialization format #{format} not recognized"
+    def produce(messages, value_schema: nil, key_schema: nil)
+      # If a key schema is provided, a value schema must have been provided
+      if key_schema && value_schema.class != key_schema.class
+        raise ArgumentError, 'Key and value schema must be the same type'
       end
-    end
 
-    def produce_binary(records)
-      body = { records: records.map(&:as_binary) }
-      response = client.request(:post, path, body: body, content_type: KafkaRest::Client::BINARY_MESSAGE_CONTENT_TYPE)
-      parse_response(response, records)
+      # Use the value schema to determine total schema
+      value_schema, key_schema = case value_schema
+      when NilClass then [BinarySchema.new, BinarySchema.new]
+      when AvroSchema
+        [value_schema, (key_schema ? key_schema : AvroSchema.new)]
+      when BinarySchema
+        [value_schema, (key_schema ? key_schema : BinarySchema.new)]
+      when JsonSchema
+        [value_schema, (key_schema ? key_schema : JsonSchema.new)]
+      else raise ArgumentError, "Value schema #{value_schema} not recognized"
+      end
 
-      Response.new(nil, nil, records)
-    end
-
-    def produce_avro(records, value_schema, key_schema)
-      body = { records: records.map(&:as_json) }
-      if value_schema.is_a?(Integer)
-        body[:value_schema_id] = value_schema
+      encoded_messages = Array(messages).map do |message|
+        {
+          key: message.key ? key_schema.serializer.call(message.key) : nil,
+          value: message.value ? value_schema.serializer.call(message.value) : nil,
+          partition: message.partition
+        }
+      end
+      body = { records: encoded_messages }
+      if key_schema.id
+        body[:key_schema_id] = key_schema.id
       else
-        body[:value_schema] = value_schema
+        body[:key_schema] = key_schema.schema_string
       end
-
-      if key_schema.is_a?(Integer)
-        body[:key_schema_id] = key_schema
+      if value_schema.id
+        body[:value_schema_id] = value_schema.id
       else
-        body[:key_schema] = key_schema
+        body[:value_schema] = value_schema.schema_string
       end
-
-      response = client.request(:post, path, body: body, content_type: KafkaRest::Client::AVRO_MESSAGE_CONTENT_TYPE)
-      parse_response(response, records)
-
-      Response.new(response.fetch(:key_schema_id), response.fetch(:value_schema_id), records)
+      response = client.request(:post, path, body: body, content_type: value_schema.content_type)
+      parse_response(response)
     end
 
-    def produce_json(records)
-      body = { records: records.map(&:as_json) }
-      response = client.request(:post, path, body: body, content_type: KafkaRest::Client::JSON_MESSAGE_CONTENT_TYPE)
-      parse_response(response, records)
-
-      Response.new(nil, nil, records)
-    end
-
-    def parse_response(response, records)
-      response.fetch(:offsets).each_with_index do |offset, index|
-        record = records[index]
-
-        record.topic = topic.name
-        if offset.key?(:error)
-          record.offset    = offset.fetch(:offset)
-          record.partition = offset.fetch(:partition)
+    def parse_response(response)
+      puts response
+      offsets = response.fetch(:offsets).map do |offset|
+        o = Offset.new
+        if offset[:error]
+          o.error = offset.fetch(:error)
+          o.error_code = offset.fetch(:error_code)
         else
-          record.error      = offset.fetch(:error)
-          record.error_code = offset.fetch(:error_code)
+          o.offset = offset.fetch(:offset)
+          o.partition = offset.fetch(:partition)
         end
+        o
       end
+      Response.new(response[:key_schema_id], response[:value_schema_id], offsets)
     end
   end
 end
