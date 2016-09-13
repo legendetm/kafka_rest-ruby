@@ -53,8 +53,10 @@ module KafkaRest
 
       case response = http.request(request)
       when Net::HTTPSuccess
+        puts response
         begin
           if response.body
+            puts response.body
             JSON.parse(response.body, symbolize_names: true)
           else
             {}

@@ -1,6 +1,12 @@
 require 'base64'
 
 module KafkaRest
+  module ContentType
+    AVRO = 'application/vnd.kafka.avro.v1+json'
+    JSON = 'application/vnd.kafka.json.v1+json'
+    BINARY = 'application/vnd.kafka.binary.v1+json'
+  end
+
   class Schema
     attr_accessor :id
 
@@ -16,7 +22,7 @@ module KafkaRest
       raise NotImplementedError
     end
 
-    def decode_message(message)
+    def deserializer
       raise NotImplementedError
     end
   end
@@ -42,15 +48,15 @@ module KafkaRest
     end
 
     def content_type
-      'application/vnd.kafka.avro.v1+json'
-    end
-
-    def decode_message(message)
-      message
+      ContentType::AVRO
     end
 
     def serializer
       -> (message) { JSON.load(message) }
+    end
+
+    def deserializer
+      -> (message) { JSON.dump(message) }
     end
   end
 
@@ -60,14 +66,15 @@ module KafkaRest
     end
 
     def content_type
-      'application/vnd.kafka.binary.v1+json'
-    end
-
-    def decode_message(message)
+      ContentType::BINARY
     end
 
     def serializer
       -> (message) { Base64.strict_encode64(message) }
+    end
+
+    def deserializer
+      -> (message) { Base64.strict_decode64(message) }
     end
   end
 
@@ -77,15 +84,15 @@ module KafkaRest
     end
 
     def content_type
-      'application/vnd.kafka.json.v1+json'
-    end
-
-    def decode_message(message)
-      message
+      ContentType::JSON
     end
 
     def serializer
       -> (message) { JSON.load(message) }
+    end
+
+    def deserializer
+      -> (message) { JSON.dump(message) }
     end
   end
 end
