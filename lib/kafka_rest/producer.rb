@@ -5,31 +5,15 @@ module KafkaRest
     Offset = Struct.new(:partition, :offset, :error_code, :error)
 
     def produce(messages, value_schema: nil, key_schema: nil)
-      # If a key schema is provided, a value schema must have been provided
-      if key_schema && value_schema.class != key_schema.class
-        raise ArgumentError, 'Key and value schema must be the same type'
+      value_schema, key_schema = Schema.massage(
+        value_schema: value_schema,
+        key_schema: key_schema
+      )
+      converted_messages = Array(messages).map do |message|
+        message.to_kafka(value_schema: value_schema, key_schema: key_schema)
       end
 
-      # Use the value schema to determine total schema
-      value_schema, key_schema = case value_schema
-      when NilClass then [BinarySchema.new, BinarySchema.new]
-      when AvroSchema
-        [value_schema, (key_schema ? key_schema : AvroSchema.new)]
-      when BinarySchema
-        [value_schema, (key_schema ? key_schema : BinarySchema.new)]
-      when JsonSchema
-        [value_schema, (key_schema ? key_schema : JsonSchema.new)]
-      else raise ArgumentError, "Value schema #{value_schema} not recognized"
-      end
-
-      encoded_messages = Array(messages).map do |message|
-        {
-          key: message.key ? key_schema.serializer.call(message.key) : nil,
-          value: message.value ? value_schema.serializer.call(message.value) : nil,
-          partition: message.partition
-        }
-      end
-      body = { records: encoded_messages }
+      body = { records: converted_messages }
       if key_schema.id
         body[:key_schema_id] = key_schema.id
       else

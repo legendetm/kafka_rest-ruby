@@ -21,7 +21,7 @@ module KafkaRest
   end
 
   class Topic
-    include KafkaRest::Producer
+    include Producer
 
     attr_reader :client, :configs, :name, :partitions
 

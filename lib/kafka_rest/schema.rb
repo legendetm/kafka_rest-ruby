@@ -1,5 +1,3 @@
-require 'base64'
-
 module KafkaRest
   module ContentType
     AVRO = 'application/vnd.kafka.avro.v1+json'
@@ -7,23 +5,55 @@ module KafkaRest
     BINARY = 'application/vnd.kafka.binary.v1+json'
   end
 
-  class Schema
-    attr_accessor :id
+  module Format
+    AVRO = 'avro'
+    BINARY = 'binary'
+    JSON = 'json'
+  end
 
-    def schema_string
-      raise NotImplementedError
-    end
+  FORMAT_TO_CONTENT_TYPE = {
+    Format::AVRO => ContentType::AVRO,
+    Format::BINARY => ContentType::BINARY,
+    Format::JSON => ContentType::JSON,
+  }
+
+  class Schema
+    attr_accessor :id, :schema_string
 
     def content_type
+      FORMAT_TO_CONTENT_TYPE[format]
+    end
+
+    def format
       raise NotImplementedError
     end
 
-    def serializer
+    def from_kafka(value)
       raise NotImplementedError
     end
 
-    def deserializer
+    def to_kafka(value)
       raise NotImplementedError
+    end
+
+    # Give a nice massage to put the schemas in happy mode
+    def self.massage(key_schema: nil, value_schema: nil)
+      # If a key schema is provided, a value schema must have been provided
+      if key_schema && value_schema.class != key_schema.class
+        raise ArgumentError, 'Key and value schema must be the same type'
+      end
+
+      # Use the value schema to determine total schema
+      value_schema, key_schema = case value_schema
+      when NilClass then [BinarySchema.new, BinarySchema.new]
+      when AvroSchema
+        [value_schema, (key_schema ? key_schema : AvroSchema.new)]
+      when BinarySchema
+        [value_schema, (key_schema ? key_schema : BinarySchema.new)]
+      when JsonSchema
+        [value_schema, (key_schema ? key_schema : JsonSchema.new)]
+      else raise ArgumentError, "Value schema #{value_schema} not recognized"
+      end
     end
   end
 
@@ -43,57 +73,44 @@ module KafkaRest
       @id, @schema = id, schema
     end
 
-    def schema_string
-      schema
+    def format
+      Format::Avro
     end
 
-    def content_type
-      ContentType::AVRO
+    def to_kafka(value)
+      JSON.parse(value, symbolize_name: true)
     end
 
-    def serializer
-      -> (message) { JSON.load(message) }
-    end
-
-    def deserializer
-      -> (message) { JSON.dump(message) }
+    def from_kafka(value)
+      value
     end
   end
 
   class BinarySchema < Schema
-    def schema_string
-      nil
+    def format
+      Format::BINARY
     end
 
-    def content_type
-      ContentType::BINARY
+    def to_kafka(value)
+      Base64.strict_encode64(value)
     end
 
-    def serializer
-      -> (message) { Base64.strict_encode64(message) }
-    end
-
-    def deserializer
-      -> (message) { Base64.strict_decode64(message) }
+    def from_kafka(value)
+      Base64.strict_decode64(value)
     end
   end
 
   class JsonSchema < Schema
-    def schema_string
-      nil
+    def format
+      Format::JSON
     end
 
-    def content_type
-      ContentType::JSON
+    def to_kafka(value)
+      JSON.parse(value, symbolize_name: true)
     end
 
-    def serializer
-      -> (message) { JSON.load(message) }
-    end
-
-    def deserializer
-      -> (message) { JSON.dump(message) }
+    def from_kafka(value)
+      value
     end
   end
 end
-

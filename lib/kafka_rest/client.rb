@@ -3,6 +3,9 @@ require 'json'
 
 module KafkaRest
   class Client
+    DEFAULT_ACCEPT_HEADER = 'application/vnd.kafka.v1+json, application/vnd.kafka+json; q=0.9, application/json; q=0.8'
+    DEFAULT_CONTENT_TYPE_HEADER = 'application/vnd.kafka.v1+json'
+
     attr_reader :endpoint, :username, :password, :headers
 
     def initialize(endpoint, username = nil, password = nil, headers = {})
@@ -64,11 +67,9 @@ module KafkaRest
         rescue JSON::ParserError => e
           raise KafkaRest::InvalidResponse, "Invalid JSON in response: #{e.message}"
         end
-
       when Net::HTTPForbidden
         message = username.nil? ? "Unauthorized" : "User `#{username}` failed to authenticate"
         raise KafkaRest::UnauthorizedRequest.new(response.code.to_i, message)
-
       else
         response_data = begin
           JSON.parse(response.body, symbolize_names: true)
@@ -87,9 +88,5 @@ module KafkaRest
     ensure
       client.close
     end
-
-    DEFAULT_ACCEPT_HEADER = 'application/vnd.kafka.v1+json, application/vnd.kafka+json; q=0.9, application/json; q=0.8'
-    DEFAULT_CONTENT_TYPE_HEADER = 'application/vnd.kafka.v1+json'
-    private_constant :DEFAULT_CONTENT_TYPE_HEADER, :DEFAULT_ACCEPT_HEADER
   end
 end

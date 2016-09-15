@@ -1,10 +1,4 @@
 module KafkaRest
-  module Format
-    AVRO = 'avro'
-    BINARY = 'binary'
-    JSON = 'json'
-  end
-
   class Consumers
     attr_reader :client, :group
 
@@ -16,20 +10,23 @@ module KafkaRest
       "/consumers/#{group}"
     end
 
-    def create(name, format = 'binary', options = {})
-      body = options.merge({name: name, format: format})
-      instance_id = client.request(:post, path, body: body)[:instance_id]
-      Consumer.new(client, group, instance_id, options.merge({format: format})) # This needs to be modified so that it can work with DC/OS
+    def create(name, format = Format::BINARY, options = {})
+      body = options.merge({ name: name, format: format })
+      response = client.request(:post, path, body: body)
+      instance_id, base_uri = response[:instance_id], response[:base_uri]
+
+      temp_client = Client.new(base_uri, client.username, client.password)
+      Consumer.new(temp_client, group, instance_id)
     end
   end
 
   class Consumer
-    attr_reader :client, :group, :format, :instance_id, :base_uri
+    attr_reader :client, :group, :format, :instance_id
 
     Response = Struct.new(:key, :value, :partition, :offset)
 
-    def initialize(client, group, instance_id, options = {})
-      @client, @group, @instance_id, @options = client, group, instance_id, options
+    def initialize(client, group, instance_id)
+      @client, @group, @instance_id = client, group, instance_id
     end
 
     def path
@@ -40,10 +37,14 @@ module KafkaRest
       client.request(:post, "#{path}/offsets")
     end
 
-    def consume(topic, options = {}, &block)
+    def destroy
+      client.request(:delete, path)
+    end
+
+    def subscribe(topic, options = {}, &block)
       messages_fetched, exception_occurred = false, false
       loop do
-        messages = fetch_messages(topic, accept, options)
+        messages = consume(topic, options)
         messages_fetched ||= messages.length > 0
         messages.each(&block)
       end
@@ -52,35 +53,18 @@ module KafkaRest
       raise
     ensure
       commit_offsets if messages_fetched && !exception_occurred
-      close
+      client.close
     end
 
-    def fetch_messages(topic, accept, options)
-      query_string = if options.any?
-        '?' + x.to_a.map { |a| a.join('=') }.join('&')
-      else
-        ''
-      end
-      response = client.request(:get, "#{path}/topics/#{topic}#{query_string}", accept: format_to_accept)
-      response.map do |message|
-        message[:topic] = topic
-        message[:key]   = decode_embedded_format(message[:key])   unless message[:key].nil?
-        message[:value] = decode_embedded_format(message[:value]) unless message[:value].nil?
-        KafkaRest::Record.new(message)
-      end
-    end
+    def consume(topic, options = {}, &block)
+      value_schema, key_schema = Schema.massage(
+        value_schema: options[:value_schema],
+        key_schema: options[:key_schema]
+      )
 
-    def destroy
-      client.request(:delete, path)
-    end
-
-    def format_to_accept
-      case @options[:format]
-      when Format::AVRO then ContentType::AVRO
-      when Format::BINARY then ContentType::BINARY
-      when Format::JSON then ContentType::JSON
-      else raise "Unsupported format #{@options[:format]}"
-      end
+      response = client.request(:get, "#{path}/topics/#{topic}", accept: value_schema.content_type)
+      messages = response.map { |m| Message.from_kafka(m, value_schema: value_schema, key_schema: key_schema) }
+      block_given? ? messages.each(&block) : messages
     end
   end
 end
