@@ -15,15 +15,19 @@ module KafkaRest
     end
 
     def topic(name)
-      Topics.new(self).topic(name)
+      topics.topic(name)
+    end
+
+    def topics
+      Topics.new(self)
     end
 
     def brokers
       Brokers.new(self).list
     end
 
-    def consumer(group, options = {})
-      KafkaRest::Consumer.new(self, group, options)
+    def consumers(group)
+      Consumers.new(self, group)
     end
 
     def http
@@ -35,7 +39,7 @@ module KafkaRest
     end
 
     def close
-      finish if http.started?
+      http.finish if http.started?
     end
 
     def request(method, path, body: nil, content_type: nil, accept: nil)
@@ -52,7 +56,7 @@ module KafkaRest
       request.content_type = content_type || DEFAULT_CONTENT_TYPE_HEADER
       request.basic_auth(username, password) if username && password
       request.body = JSON.dump(body) if body
-      puts request.body
+      puts request.body, request['Accept'], request.content_type
 
       case response = http.request(request)
       when Net::HTTPSuccess
@@ -82,11 +86,15 @@ module KafkaRest
       end
     end
 
-    def self.open(endpoint, **kwargs, &block)
-      client = new(endpoint, **kwargs)
-      block.call(client)
+    def produce(topic_name, message, value_schema: nil, key_schema: nil)
+      produce_batch(topic_name, [message], value_schema: value_schema, key_schema: key_schema)
+    end
+
+    def produce_batch(topic_name, messages, value_schema: nil, key_schema: nil)
+      t = topic(topic_name)
+      t.produce_batch(messages, value_schema: value_schema, key_schema: key_schema)
     ensure
-      client.close
+      close
     end
   end
 end

@@ -42,17 +42,13 @@ module KafkaRest
     end
 
     def subscribe(topic, options = {}, &block)
-      messages_fetched, exception_occurred = false, false
       loop do
         messages = consume(topic, options)
-        messages_fetched ||= messages.length > 0
+        messages_fetched = messages.length > 0
         messages.each(&block)
+        commit_offsets if messages_fetched
       end
-    rescue Exception
-      exception_occurred = true
-      raise
     ensure
-      commit_offsets if messages_fetched && !exception_occurred
       client.close
     end
 
@@ -63,8 +59,18 @@ module KafkaRest
       )
 
       response = client.request(:get, "#{path}/topics/#{topic}", accept: value_schema.content_type)
-      messages = response.map { |m| Message.from_kafka(m, value_schema: value_schema, key_schema: key_schema) }
-      block_given? ? messages.each(&block) : messages
+      messages = response.map do |m|
+        Message.from_kafka(m, value_schema: value_schema, key_schema: key_schema)
+      end
+
+      if block_given?
+        puts 'sup'
+        messages.each(&block)
+      else
+        messages
+      end
+    ensure
+      client.close
     end
   end
 end
