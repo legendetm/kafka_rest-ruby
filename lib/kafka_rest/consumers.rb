@@ -10,8 +10,15 @@ module KafkaRest
       "/consumers/#{group}"
     end
 
+    def default_options
+      {
+        "auto.commit.enable": "false",
+        "auto.offset.reset": "largest",
+      }
+    end
+
     def create(name, format = Format::BINARY, options = {})
-      body = options.merge({ name: name, format: format })
+      body = default_options.merge(options).merge({ name: name, format: format })
       response = client.request(:post, path, body: body)
       instance_id, base_uri = response[:instance_id], response[:base_uri]
 
@@ -64,13 +71,10 @@ module KafkaRest
       end
 
       if block_given?
-        puts 'sup'
         messages.each(&block)
       else
         messages
       end
-    ensure
-      client.close
     end
   end
 end

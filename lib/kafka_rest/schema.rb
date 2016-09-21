@@ -59,6 +59,7 @@ module KafkaRest
 
   class AvroSchema < Schema
     def initialize(schema = nil, id: nil)
+      schema = schema.to_json if schema.is_a?(Hash)
       if id && !id.is_a?(Integer)
         raise ArgumentError,  'Avro schema id must be an Integer'
       elsif schema && !schema.is_a?(String)

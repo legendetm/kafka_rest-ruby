@@ -23,7 +23,7 @@ module KafkaRest
     end
 
     def brokers
-      Brokers.new(self).list
+      Brokers.new(self)
     end
 
     def consumers(group)
