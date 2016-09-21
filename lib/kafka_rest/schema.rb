@@ -29,11 +29,11 @@ module KafkaRest
     end
 
     def from_kafka(value)
-      value
+      raise NotImplementedError
     end
 
     def to_kafka(value)
-      value
+      raise NotImplementedError
     end
 
     # Give a nice massage to put the schemas in happy mode
@@ -47,11 +47,11 @@ module KafkaRest
       value_schema, key_schema = case value_schema
       when NilClass then [BinarySchema.new, BinarySchema.new]
       when AvroSchema
-        [value_schema, (key_schema ? key_schema : Schema.new)]
+        [value_schema, (key_schema ? key_schema : AvroSchema.new)]
       when BinarySchema
         [value_schema, (key_schema ? key_schema : BinarySchema.new)]
       when JsonSchema
-        [value_schema, (key_schema ? key_schema : Schema.new)]
+        [value_schema, (key_schema ? key_schema : JsonSchema.new)]
       else raise ArgumentError, "Value schema #{value_schema} not recognized"
       end
     end
@@ -59,9 +59,7 @@ module KafkaRest
 
   class AvroSchema < Schema
     def initialize(schema = nil, id: nil)
-      if !id && !schema
-        raise ArgumentError, 'Either schema id or schema string must be set'
-      elsif id && !id.is_a?(Integer)
+      if id && !id.is_a?(Integer)
         raise ArgumentError,  'Avro schema id must be an Integer'
       elsif schema && !schema.is_a?(String)
         e = 'Avro schema string must be a json object serialized as a string'
@@ -73,6 +71,14 @@ module KafkaRest
 
     def format
       Format::AVRO
+    end
+
+    def from_kafka(value)
+      value
+    end
+
+    def to_kafka(value)
+      value
     end
   end
 
@@ -93,6 +99,14 @@ module KafkaRest
   class JsonSchema < Schema
     def format
       Format::JSON
+    end
+
+    def from_kafka(value)
+      value
+    end
+
+    def to_kafka(value)
+      value
     end
   end
 end
