@@ -60,14 +60,17 @@ module KafkaRest
     end
 
     def consume(topic, options = {}, &block)
-      value_schema, key_schema = Schema.massage(
+      schema_pair = Schema.to_pair(
         value_schema: options[:value_schema],
         key_schema: options[:key_schema]
       )
 
-      response = client.request(:get, "#{path}/topics/#{topic}", accept: value_schema.content_type)
+      response = client.request(
+        :get,
+        "#{path}/topics/#{topic}",
+        accept: schema_pair.value_schema.content_type)
       messages = response.map do |m|
-        Message.from_kafka(m, value_schema: value_schema, key_schema: key_schema)
+        Message.from_kafka(m, schema_pair)
       end
 
       if block_given?
