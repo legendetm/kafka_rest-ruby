@@ -9,7 +9,7 @@ module KafkaRest
 
     def list
       broker_ids = client.request(:get, '/brokers')[:brokers]
-      brokers = broker_ids.map do |broker_id|
+      self.brokers = broker_ids.map do |broker_id|
         Broker.new(broker_id)
       end
     end

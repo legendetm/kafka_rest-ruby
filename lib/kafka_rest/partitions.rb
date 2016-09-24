@@ -45,8 +45,8 @@ module KafkaRest
     private
 
     def populate(response)
-      leader = response.fetch(:leader)
-      replicas = response.fetch(:replicas).map do |r|
+      self.leader = response.fetch(:leader)
+      self.replicas = response.fetch(:replicas).map do |r|
         Replica.new(r.fetch(:broker), r.fetch(:leader), r.fetch(:in_sync))
       end
     end

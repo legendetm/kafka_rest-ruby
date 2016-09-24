@@ -13,7 +13,7 @@ module KafkaRest
 
     def list
       tops = client.request(:get, path)
-      topics = tops.map { |top| Topic.new(client, top) }
+      self.topics = tops.map { |top| Topic.new(client, top) }
     end
 
     def topic(topic_name)
@@ -46,8 +46,8 @@ module KafkaRest
 
     def get
       response = client.request(:get, path)
-      configs = response.fetch(:configs)
-      partitions = response.fetch(:partitions).map do |part|
+      self.configs = response.fetch(:configs)
+      self.partitions = response.fetch(:partitions).map do |part|
         Partition.new(client, self, part.partition, part)
       end
       self
