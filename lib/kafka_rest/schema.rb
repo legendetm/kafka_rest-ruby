@@ -63,16 +63,13 @@ module KafkaRest
   end
 
   class AvroSchema < Schema
-    def initialize(schema = nil, id: nil)
+    def initialize(schema)
       schema = schema.to_json if schema.is_a?(Hash)
-      if id && !id.is_a?(Integer)
-        raise ArgumentError,  'Avro schema id must be an Integer'
-      elsif schema && !schema.is_a?(String)
-        e = 'Avro schema string must be a json object serialized as a string'
-        raise ArgumentError, e
+      if schema.is_a?(String)
+        @schema_string = schema
+      elsif schema.is_a?(Integer)
+        @id = schema
       end
-
-      @id, @schema_string = id, schema
     end
 
     def format
