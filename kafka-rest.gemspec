@@ -6,8 +6,7 @@ require 'kafka_rest/version'
 Gem::Specification.new do |spec|
   spec.name          = "kafka_rest"
   spec.version       = KafkaRest::VERSION
-  spec.authors       = ["Yagnik"]
-  spec.email         = ["yagnik.khanna@shopify.com"]
+  spec.authors       = ["nikhilofthesouth"]
   spec.summary       = %q{Ruby gem to access kafka-rest by Confluent Inc}
   spec.description   = %q{Ruby gem to access kafka-rest by Confluent Inc}
   spec.homepage      = "http://confluent.io/docs/current/kafka-rest/docs/index.html"
@@ -18,10 +17,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "bundler", "~> 1.7"
-  spec.add_development_dependency "rake", "~> 10.0"
-  spec.add_development_dependency "minitest", "~> 5.0"
-  spec.add_development_dependency "vcr", "~> 2.9.3"
-  spec.add_development_dependency "mocha", "~> 1.0"
-  spec.add_development_dependency "zookeeper"
+  spec.add_development_dependency "bundler"
+  spec.add_development_dependency "rake"
+  spec.add_development_dependency "rspec", "~> 3.5"
 end
