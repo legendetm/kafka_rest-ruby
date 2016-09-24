@@ -44,8 +44,7 @@ module KafkaRest
       BinarySchema
     end
 
-    # Give a nice massage to put the schemas in happy mode
-    def self.massage(key_schema: nil, value_schema: nil)
+    def self.to_pair(key_schema: nil, value_schema: nil)
       if value_schema && key_schema
         if value_schema.class != key_schema.class
           raise ArgumentError, 'Key and value schema must be the same type'

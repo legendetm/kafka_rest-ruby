@@ -7,17 +7,17 @@ module KafkaRest
       @partition, @offset = opts[:partition], opts[:offset]
     end
 
-    def to_kafka(value_schema:, key_schema:)
+    def to_kafka(schema_pair)
       {
-        key: key ? key_schema.to_kafka(key) : nil,
-        value: value ? value_schema.to_kafka(value) : nil,
+        key: schema_pair.key_schema.to_kafka(key),
+        value: schema_pair.value_schema.to_kafka(value),
         partition: partition
       }
     end
 
-    def self.from_kafka(kafka_msg, value_schema:, key_schema:)
-      value = value_schema.from_kafka(kafka_msg[:value]) if kafka_msg[:value]
-      key = key_schema.from_kafka(kafka_msg[:key]) if kafka_msg[:key]
+    def self.from_kafka(kafka_msg, schema_pair)
+      value = schema_pair.value_schema.from_kafka(kafka_msg[:value])
+      key = schema_pair.key_schema.from_kafka(kafka_msg[:key])
       partition, offset = kafka_msg[:partition], kafka_msg[:offset]
       new(value: value, key: key, partition: partition, offset: offset)
     end

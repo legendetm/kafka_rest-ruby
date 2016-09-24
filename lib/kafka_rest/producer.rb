@@ -4,17 +4,20 @@ module KafkaRest
     Response = Struct.new(:key_schema_id, :value_schema_id, :offsets)
     Offset = Struct.new(:partition, :offset, :error_code, :error)
 
-    def produce(message, value_schema: nil, key_schema: nil)
-      produce_batch([message], value_schema: value_schema, key_schema: key_schema)
+    def produce(message, opts = {})
+      produce_batch([message], opts)
     end
 
-    def produce_batch(messages, value_schema: nil, key_schema: nil)
-      value_schema, key_schema = Schema.massage(
-        value_schema: value_schema,
-        key_schema: key_schema
+    def produce_batch(messages, opts = {})
+      schema_pair = Schema.to_pair(
+        value_schema: opts[:value_schema],
+        key_schema: opts[:key_schema]
       )
+      key_schema = schema_pair.key_schema
+      value_schema = schema_pair.value_schema
+
       converted_messages = messages.map do |message|
-        message.to_kafka(value_schema: value_schema, key_schema: key_schema)
+        message.to_kafka(schema_pair)
       end
 
       body = { records: converted_messages }
@@ -33,7 +36,6 @@ module KafkaRest
     end
 
     def parse_response(response)
-      puts response
       offsets = response.fetch(:offsets).map do |offset|
         o = Offset.new
         if offset[:error]
