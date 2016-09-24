@@ -1,3 +1,5 @@
+require 'base64'
+
 module KafkaRest
   module ContentType
     AVRO = 'application/vnd.kafka.avro.v1+json'
@@ -16,6 +18,8 @@ module KafkaRest
     Format::BINARY => ContentType::BINARY,
     Format::JSON => ContentType::JSON,
   }
+
+  SchemaPair = Struct.new(:value_schema, :key_schema)
 
   class Schema
     attr_accessor :id, :schema_string
@@ -36,24 +40,25 @@ module KafkaRest
       raise NotImplementedError
     end
 
+    def self.default
+      BinarySchema
+    end
+
     # Give a nice massage to put the schemas in happy mode
     def self.massage(key_schema: nil, value_schema: nil)
-      # If a key schema is provided, a value schema must have been provided
-      if key_schema && value_schema.class != key_schema.class
-        raise ArgumentError, 'Key and value schema must be the same type'
+      if value_schema && key_schema
+        if value_schema.class != key_schema.class
+          raise ArgumentError, 'Key and value schema must be the same type'
+        end
+      elsif value_schema
+        key_schema = value_schema.class.new
+      elsif key_schema
+        value_schema = key_schema.class.new
+      else
+        key_schema, value_schema = default.new, default.new
       end
 
-      # Use the value schema to determine total schema
-      value_schema, key_schema = case value_schema
-      when NilClass then [BinarySchema.new, BinarySchema.new]
-      when AvroSchema
-        [value_schema, (key_schema ? key_schema : AvroSchema.new)]
-      when BinarySchema
-        [value_schema, (key_schema ? key_schema : BinarySchema.new)]
-      when JsonSchema
-        [value_schema, (key_schema ? key_schema : JsonSchema.new)]
-      else raise ArgumentError, "Value schema #{value_schema} not recognized"
-      end
+      SchemaPair.new(value_schema, key_schema)
     end
   end
 
@@ -89,11 +94,11 @@ module KafkaRest
     end
 
     def to_kafka(value)
-      Base64.strict_encode64(value)
+      Base64.strict_encode64(value) if value
     end
 
     def from_kafka(value)
-      Base64.strict_decode64(value)
+      Base64.strict_decode64(value) if value
     end
   end
 

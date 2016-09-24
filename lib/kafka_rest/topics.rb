@@ -25,11 +25,10 @@ module KafkaRest
     include Producer
 
     attr_accessor :configs, :partitions
-    attr_reader :client, :name, :partitions_api
+    attr_reader :client, :name
 
     def initialize(client, name)
       @client, @name = client, name
-      @partitions_api = Partitions.new(client, self)
     end
 
     def partition(id)

@@ -8,7 +8,7 @@ module KafkaRest
 
     attr_reader :endpoint, :username, :password, :headers
 
-    def initialize(endpoint, username = nil, password = nil, headers = {})
+    def initialize(endpoint, username: nil, password: nil, headers = {})
       @endpoint = URI(endpoint)
       @username, @password = username, password
       @headers = headers
@@ -42,7 +42,7 @@ module KafkaRest
       http.finish if http.started?
     end
 
-    def request(method, path, body: nil, content_type: nil, accept: nil)
+    def request(method, path, opts = {})
       request_class = case method
         when :get;    Net::HTTP::Get
         when :post;   Net::HTTP::Post
@@ -52,33 +52,30 @@ module KafkaRest
       end
 
       request = request_class.new(path, headers)
-      request['Accept'] = accept || DEFAULT_ACCEPT_HEADER
-      request.content_type = content_type || DEFAULT_CONTENT_TYPE_HEADER
+      request['Accept'] = opts[:accept] || DEFAULT_ACCEPT_HEADER
+      request.content_type = opts[:content_type] || DEFAULT_CONTENT_TYPE_HEADER
       request.basic_auth(username, password) if username && password
       request.body = JSON.dump(body) if body
-      puts request.body, request['Accept'], request.content_type
 
       case response = http.request(request)
       when Net::HTTPSuccess
-        puts response
         begin
           if response.body
-            puts response.body
             JSON.parse(response.body, symbolize_names: true)
           else
             {}
           end
         rescue JSON::ParserError => e
-          raise KafkaRest::InvalidResponse, "Invalid JSON in response: #{e.message}"
+          raise InvalidResponse, "Invalid JSON in response: #{e.message}"
         end
       when Net::HTTPForbidden
         message = username.nil? ? "Unauthorized" : "User `#{username}` failed to authenticate"
-        raise KafkaRest::UnauthorizedRequest.new(response.code.to_i, message)
+        raise UnauthorizedRequest.new(response.code.to_i, message)
       else
         response_data = begin
           JSON.parse(response.body, symbolize_names: true)
         rescue JSON::ParserError => e
-          raise KafkaRest::InvalidResponse, "Invalid JSON in response: #{e.message}"
+          raise InvalidResponse, "Invalid JSON in response: #{e.message}"
         end
 
         error_class = RESPONSE_ERROR_CODES[response_data[:error_code]] || KafkaRest::ResponseError
@@ -86,13 +83,12 @@ module KafkaRest
       end
     end
 
-    def produce(topic_name, message, value_schema: nil, key_schema: nil)
-      produce_batch(topic_name, [message], value_schema: value_schema, key_schema: key_schema)
+    def produce(topic_name, message, opts = {})
+      produce_batch(topic_name, [message], opts)
     end
 
-    def produce_batch(topic_name, messages, value_schema: nil, key_schema: nil)
-      t = topic(topic_name)
-      t.produce_batch(messages, value_schema: value_schema, key_schema: key_schema)
+    def produce_batch(topic_name, messages, opts = {})
+      topic(topic_name).produce_batch(messages, opts)
     ensure
       close
     end

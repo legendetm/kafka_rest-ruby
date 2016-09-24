@@ -1,12 +1,10 @@
-require 'base64'
-
 module KafkaRest
   class Message
-    attr_accessor :offset
-    attr_reader :key, :value, :partition
+    attr_reader :key, :value, :partition, :offset
 
-    def initialize(value:, key: nil, partition: nil)
-      @key, @value, @partition = key, value, partition
+    def initialize(opts = {})
+      @key, @value = opts[:key], opts[:value]
+      @partition, @offset = opts[:partition], opts[:offset]
     end
 
     def to_kafka(value_schema:, key_schema:)
@@ -20,9 +18,8 @@ module KafkaRest
     def self.from_kafka(kafka_msg, value_schema:, key_schema:)
       value = value_schema.from_kafka(kafka_msg[:value]) if kafka_msg[:value]
       key = key_schema.from_kafka(kafka_msg[:key]) if kafka_msg[:key]
-      message = new(value: value, key: key, partition: kafka_msg[:partition])
-      message.offset = kafka_msg[:offset]
-      message
+      partition, offset = kafka_msg[:partition], kafka_msg[:offset]
+      new(value: value, key: key, partition: partition, offset: offset)
     end
   end
 end
