@@ -1,6 +1,7 @@
 module KafkaRest
   class Topics
-    attr_reader :client, :topics
+    attr_accessor :topics
+    attr_reader :client
 
     def initialize(client)
       @client = client
@@ -11,8 +12,8 @@ module KafkaRest
     end
 
     def list
-      topics = client.request(:get, path)
-      @topics = topics.map { |t| Topic.new(client, t) }
+      tops = client.request(:get, path)
+      topics = tops.map { |top| Topic.new(client, top) }
     end
 
     def topic(topic_name)
@@ -23,11 +24,12 @@ module KafkaRest
   class Topic
     include Producer
 
-    attr_reader :client, :configs, :name, :partitions
+    attr_accessor :configs, :partitions
+    attr_reader :client, :name, :partitions_api
 
     def initialize(client, name)
       @client, @name = client, name
-      @partitions = Partitions.new(client, self)
+      @partitions_api = Partitions.new(client, self)
     end
 
     def partition(id)
@@ -44,9 +46,9 @@ module KafkaRest
 
     def get
       response = client.request(:get, path)
-      @configs = response.fetch(:configs)
-      @partitions = response.fetch(:partitions).map do |partition|
-        Partition.new(client, self, partition.partition, partition)
+      configs = response.fetch(:configs)
+      partitions = response.fetch(:partitions).map do |part|
+        Partition.new(client, self, part.partition, part)
       end
       self
     end

@@ -13,9 +13,9 @@ module KafkaRest
     end
 
     def list
-      partitions = client.request(:get, path)
-      @partitions = partitions.map do |p|
-        partition = Partition.new(client, topic, p.partition, p)
+      parts = client.request(:get, path)
+      partitions = parts.map do |part|
+        Partition.new(client, topic, part.partition, part)
       end
     end
   end
@@ -25,7 +25,8 @@ module KafkaRest
 
     Replica = Struct.new(:broker, :leader, :in_sync)
 
-    attr_reader :client, :topic, :id, :leader, :replicas
+    attr_accessor :leader, :replicas
+    attr_reader :client, :topic, :id
 
     def initialize(client, topic, id, response = nil)
       @client, @topic, @id = client, topic, id
@@ -44,11 +45,10 @@ module KafkaRest
     private
 
     def populate(response)
-      @leader   = response.fetch(:leader)
-      @replicas = response.fetch(:replicas).map do |r|
+      leader = response.fetch(:leader)
+      replicas = response.fetch(:replicas).map do |r|
         Replica.new(r.fetch(:broker), r.fetch(:leader), r.fetch(:in_sync))
       end
     end
   end
 end
-

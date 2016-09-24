@@ -1,14 +1,17 @@
 module KafkaRest
   class Brokers
-    attr_reader :brokers, :client
+    attr_accessor :brokers
+    attr_reader :client
 
     def initialize(client)
       @client = client
     end
 
     def list
-      brokers = client.request(:get, '/brokers')[:brokers]
-      @brokers = brokers.map { |b| Broker.new(b) }
+      broker_ids = client.request(:get, '/brokers')[:brokers]
+      brokers = broker_ids.map do |broker_id|
+        Broker.new(broker_id)
+      end
     end
   end
 
@@ -24,4 +27,3 @@ module KafkaRest
     end
   end
 end
-
