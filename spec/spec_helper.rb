@@ -2,23 +2,26 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'kafka_rest'
 require 'vcr'
 
+TEST_TOPIC = "test_kafka_rest_ruby"
+
 CLIENT_ENDPOINT = ENV['KAFKA_REST_PROXY_URI'] || 'http://localhost:8082'
 CLIENT_USERNAME = ENV['KAFKA_REST_PROXY_USERNAME']
 CLIENT_PASSWORD = ENV['KAFKA_REST_PROXY_PASSWORD']
 CLIENT_HEADERS = ENV['KAFKA_REST_PROXY_HEADERS'] || {}
 
 def kafka_rest_client
-  Client.new(
+  KafkaRest::Client.new(
     CLIENT_ENDPOINT,
-    username: CLIENT_USERNAME,
-    password: CLIENT_PASSWORD,
+    CLIENT_USERNAME,
+    CLIENT_PASSWORD,
     CLIENT_HEADERS
   )
 end
 
 VCR.configure do |config|
+  config.cassette_library_dir = "spec/cassettes"
+  config.hook_into :webmock
   config.configure_rspec_metadata!
-  config.default_cassette_options = { serialize_with: :json }
 end
 
 RSpec.configure do |config|

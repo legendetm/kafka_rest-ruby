@@ -8,7 +8,7 @@ module KafkaRest
 
     attr_reader :endpoint, :username, :password, :headers
 
-    def initialize(endpoint, username: nil, password: nil, headers = {})
+    def initialize(endpoint, username = nil, password = nil, headers = {})
       @endpoint = URI(endpoint)
       @username, @password = username, password
       @headers = headers
@@ -55,7 +55,7 @@ module KafkaRest
       request['Accept'] = opts[:accept] || DEFAULT_ACCEPT_HEADER
       request.content_type = opts[:content_type] || DEFAULT_CONTENT_TYPE_HEADER
       request.basic_auth(username, password) if username && password
-      request.body = JSON.dump(body) if body
+      request.body = JSON.dump(opts[:body]) if opts[:body]
 
       case response = http.request(request)
       when Net::HTTPSuccess

@@ -1,9 +1,10 @@
 require 'spec_helper'
 
-describe Brokers, :vcr do
+describe KafkaRest::Brokers, :vcr do
+  let(:client) { kafka_rest_client }
+  let(:brokers_api) { described_class.new(client) }
+
   describe '#list' do
-    let(:client) { kafka_rest_client }
-    let(:brokers_api) { described_class.new(client) }
     let(:brokers) { brokers_api.list }
 
     it 'returns the set of brokers' do
