@@ -15,7 +15,7 @@ module KafkaRest
     def list
       parts = client.request(:get, path)
       self.partitions = parts.map do |part|
-        Partition.new(client, topic, part.partition, part)
+        Partition.new(client, topic, part[:partition], part)
       end
     end
   end

@@ -8,11 +8,12 @@ module KafkaRest
     end
 
     def to_kafka(schema_pair)
-      {
+      msg = {
         key: schema_pair.key_schema.to_kafka(key),
-        value: schema_pair.value_schema.to_kafka(value),
-        partition: partition
+        value: schema_pair.value_schema.to_kafka(value)
       }
+      msg[:partition] = partition if partition
+      msg
     end
 
     def self.from_kafka(kafka_msg, schema_pair)
