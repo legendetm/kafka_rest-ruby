@@ -48,17 +48,6 @@ module KafkaRest
       client.request(:delete, path)
     end
 
-    def subscribe(topic, options = {}, &block)
-      loop do
-        messages = consume(topic, options)
-        messages_fetched = messages.length > 0
-        messages.each(&block)
-        commit_offsets if messages_fetched
-      end
-    ensure
-      client.close
-    end
-
     def consume(topic, options = {}, &block)
       schema_pair = Schema.to_pair(
         value_schema: options[:value_schema],
