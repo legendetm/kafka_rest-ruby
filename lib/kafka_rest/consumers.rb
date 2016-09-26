@@ -14,26 +14,28 @@ module KafkaRest
       {
         "auto.commit.enable": "false",
         "auto.offset.reset": "largest",
+        format: Format::BINARY,
       }
     end
 
-    def create(name, format = Format::BINARY, options = {})
-      body = default_options.merge(options).merge({ name: name, format: format })
+    def create(name, options = {})
+      body = default_options.merge(options).merge({ name: name })
       response = client.request(:post, path, body: body)
       instance_id, base_uri = response[:instance_id], response[:base_uri]
 
       temp_client = Client.new(base_uri, client.username, client.password)
-      Consumer.new(temp_client, group, instance_id)
+      Consumer.new(temp_client, group, base_uri, instance_id)
     end
   end
 
   class Consumer
-    attr_reader :client, :group, :format, :instance_id
+    attr_reader :client, :group, :base_uri, :instance_id
 
-    Response = Struct.new(:key, :value, :partition, :offset)
+    CommitMetadata = Struct.new(:topic, :partition, :consumed, :committed)
 
-    def initialize(client, group, instance_id)
-      @client, @group, @instance_id = client, group, instance_id
+    def initialize(client, group, base_uri, instance_id)
+      @client, @group = client, group
+      @base_uri, @instance_id = base_uri, instance_id
     end
 
     def path
@@ -41,11 +43,20 @@ module KafkaRest
     end
 
     def commit_offsets
-      client.request(:post, "#{path}/offsets")
+      client.request(:post, "#{path}/offsets").map do |metadata|
+        CommitMetadata.new(
+          metadata[:topic],
+          metadata[:partition],
+          metadata[:consumed],
+          metadata[:committed]
+        )
+      end
     end
 
     def destroy
       client.request(:delete, path)
+    ensure
+      client.close
     end
 
     def consume(topic, options = {}, &block)

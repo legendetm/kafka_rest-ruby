@@ -3,6 +3,8 @@ require 'kafka_rest'
 require 'vcr'
 
 TEST_TOPIC = "test_kafka_rest_ruby"
+TEST_CONSUMER_GROUP = "test_group_kafka_rest_ruby"
+TEST_CONSUMER_NAME = "test_name_kafka_rest_ruby"
 
 CLIENT_ENDPOINT = ENV['KAFKA_REST_PROXY_URI'] || 'http://localhost:8082'
 CLIENT_USERNAME = ENV['KAFKA_REST_PROXY_USERNAME']

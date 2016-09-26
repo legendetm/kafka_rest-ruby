@@ -2,10 +2,10 @@
 http_interactions:
 - request:
     method: post
-    uri: http://localhost:8082/topics/test_kafka_rest_ruby
+    uri: http://localhost:8082/consumers/test_group_kafka_rest_ruby
     body:
       encoding: UTF-8
-      string: '{"records":[{"key":"c3Vw","value":"ZGF3Zw==","partition":0},{"key":null,"value":"ZGF3Zw=="}],"key_schema":null,"value_schema":null}'
+      string: '{"auto.commit.enable":"false","auto.offset.reset":"smallest","format":"binary","name":"test_name_kafka_rest_ruby"}'
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -15,23 +15,23 @@ http_interactions:
       User-Agent:
       - Ruby
       Content-Type:
-      - application/vnd.kafka.binary.v1+json
+      - application/vnd.kafka.v1+json
   response:
     status:
       code: 200
       message: OK
     headers:
       Date:
-      - Mon, 26 Sep 2016 01:36:08 GMT
+      - Mon, 26 Sep 2016 01:37:19 GMT
       Content-Type:
       - application/vnd.kafka.v1+json
       Content-Length:
-      - '173'
+      - '151'
       Server:
       - Jetty(9.2.12.v20150709)
     body:
       encoding: UTF-8
-      string: '{"offsets":[{"partition":0,"offset":0,"error_code":null,"error":null},{"partition":0,"offset":1,"error_code":null,"error":null}],"key_schema_id":null,"value_schema_id":null}'
-    http_version:
-  recorded_at: Mon, 26 Sep 2016 01:36:09 GMT
+      string: '{"instance_id":"test_name_kafka_rest_ruby","base_uri":"http://localhost:8082/consumers/test_group_kafka_rest_ruby/instances/test_name_kafka_rest_ruby"}'
+    http_version: 
+  recorded_at: Mon, 26 Sep 2016 01:37:20 GMT
 recorded_with: VCR 3.0.3
