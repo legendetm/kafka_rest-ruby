@@ -23,6 +23,8 @@ module KafkaRest
   class Partition
     include KafkaRest::Producer
 
+    VALID_QUERY_PARAMS = [:count, :offset].freeze
+
     Replica = Struct.new(:broker, :leader, :in_sync)
 
     attr_accessor :leader, :replicas
@@ -40,6 +42,38 @@ module KafkaRest
     def get
       populate(client.request(:get, path))
       self
+    end
+
+    def default_options
+      {
+        count: 1
+      }
+    end
+
+    def consume(options = {}, &block)
+      options = default_options.merge(options)
+      schema_pair = Schema.to_pair(
+        value_schema: options[:value_schema],
+        key_schema: options[:key_schema]
+      )
+
+      query_params = options.select { |k, v| VALID_QUERY_PARAMS.include?(k) }
+      query_string = query_params.map { |k, v| "#{k}=#{v}" }.join('&')
+      response = client.request(
+        :get,
+        "#{path}/messages?#{query_string}",
+        accept: schema_pair.value_schema.content_type
+      )
+
+      messages = response.map do |m|
+        Message.from_kafka(m, schema_pair)
+      end
+
+      if block_given?
+        messages.each(&block)
+      else
+        messages
+      end
     end
 
     private

@@ -68,7 +68,9 @@ module KafkaRest
       response = client.request(
         :get,
         "#{path}/topics/#{topic}",
-        accept: schema_pair.value_schema.content_type)
+        accept: schema_pair.value_schema.content_type
+      )
+
       messages = response.map do |m|
         Message.from_kafka(m, schema_pair)
       end
