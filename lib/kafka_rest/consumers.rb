@@ -20,6 +20,8 @@ module KafkaRest
 
     def create(name, options = {})
       body = default_options.merge(options).merge({ name: name })
+      KafkaRest.logger.info("Creating consumer #{name} in group #{group}")
+
       response = client.request(:post, path, body: body)
       instance_id, base_uri = response[:instance_id], response[:base_uri]
 
@@ -43,6 +45,7 @@ module KafkaRest
     end
 
     def commit_offsets
+      KafkaRest.logger.info("Committing offsets for consumer #{instance_id} in group #{group}")
       client.request(:post, "#{path}/offsets").map do |metadata|
         CommitMetadata.new(
           metadata[:topic],
@@ -54,12 +57,14 @@ module KafkaRest
     end
 
     def destroy
+      KafkaRest.logger.info("Destroying consumer #{instance_id} in group #{group}")
       client.request(:delete, path)
     ensure
       client.close
     end
 
     def consume(topic, options = {}, &block)
+      KafkaRest.logger.info("Consuming messages from topic #{topic} with consumer #{instance_id} in group #{group}")
       schema_pair = Schema.to_pair(
         value_schema: options[:value_schema],
         key_schema: options[:key_schema]

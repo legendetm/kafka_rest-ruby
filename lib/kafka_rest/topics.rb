@@ -31,6 +31,10 @@ module KafkaRest
       @client, @name = client, name
     end
 
+    def topic_name
+      name
+    end
+
     def partition(id)
       KafkaRest::Partition.new(client, self, id)
     end

@@ -15,6 +15,14 @@ module KafkaRest
     end
   end
 
+  def self.logger
+    KafkaRest::Logging::logger
+  end
+
+  def self.logger=(log)
+    KafkaRest::Logging::logger = log
+  end
+
   RESPONSE_ERROR_CODES = {
     40401 => (TopicNotFound         = Class.new(KafkaRest::ResponseError)),
     40402 => (PartitionNotFound     = Class.new(KafkaRest::ResponseError)),
@@ -26,6 +34,7 @@ module KafkaRest
   }
 end
 
+require 'kafka_rest/logging'
 require 'kafka_rest/schema'
 require 'kafka_rest/brokers'
 require 'kafka_rest/client'

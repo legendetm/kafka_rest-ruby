@@ -9,6 +9,7 @@ module KafkaRest
     end
 
     def produce_batch(messages, opts = {})
+      KafkaRest.logger.info("Publishing #{messages.count} messages to topic #{topic_name}")
       schema_pair = Schema.to_pair(
         value_schema: opts[:value_schema],
         key_schema: opts[:key_schema]

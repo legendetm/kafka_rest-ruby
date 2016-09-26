@@ -35,8 +35,12 @@ module KafkaRest
       populate(response) if response
     end
 
+    def topic_name
+      topic.name
+    end
+
     def path
-      "/topics/#{topic.name}/partitions/#{id}"
+      "/topics/#{topic_name}/partitions/#{id}"
     end
 
     def get
@@ -52,6 +56,8 @@ module KafkaRest
 
     def consume(options = {}, &block)
       options = default_options.merge(options)
+      KafkaRest.logger.info("Consuming #{options[:count]} messages from topic/partition #{topic_name}/#{id} with offset #{options[:offset]}")
+
       schema_pair = Schema.to_pair(
         value_schema: options[:value_schema],
         key_schema: options[:key_schema]
