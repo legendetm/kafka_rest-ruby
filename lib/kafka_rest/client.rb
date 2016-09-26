@@ -78,7 +78,7 @@ module KafkaRest
           raise InvalidResponse, "Invalid JSON in response: #{e.message}"
         end
 
-        error_class = RESPONSE_ERROR_CODES[response_data[:error_code]] || KafkaRest::ResponseError
+        error_class = RESPONSE_ERROR_CODES[response_data[:error_code]] || ResponseError
         raise error_class.new(response_data[:error_code], response_data[:message])
       end
     end

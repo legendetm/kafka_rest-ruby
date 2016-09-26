@@ -1,12 +1,10 @@
 require 'kafka_rest/version'
 
 module KafkaRest
-  Error = Class.new(StandardError)
-  InvalidContentType = Class.new(Error)
-  InvalidResponse = Class.new(Error)
-  UnauthorizedRequest = Class.new(Error)
+  InvalidResponse = Class.new(StandardError)
+  UnauthorizedRequest = Class.new(StandardError)
 
-  class ResponseError < Error
+  class ResponseError < StandardError
     attr_reader :code
 
     def initialize(code, message)
@@ -15,6 +13,44 @@ module KafkaRest
     end
   end
 
+  TopicNotFound = Class.new(ResponseError)
+  PartitionNotFound = Class.new(ResponseError)
+  ConsumerInstanceNotFound = Class.new(ResponseError)
+  LeaderNotAvailable = Class.new(ResponseError)
+  ConsumerFormatMismatch = Class.new(ResponseError)
+  ConsumerAlreadySubscribed = Class.new(ResponseError)
+  ConsumerAlreadyExists = Class.new(ResponseError)
+  KeySchemaMissing = Class.new(ResponseError)
+  ValueSchemaMissing = Class.new(ResponseError)
+  JsonAvroConversionError = Class.new(ResponseError)
+  InvalidConsumerConfig = Class.new(ResponseError)
+  InvalidSchema = Class.new(ResponseError)
+  ZookeeperError = Class.new(ResponseError)
+  KafkaError = Class.new(ResponseError)
+  KafkaRetriableError = Class.new(ResponseError)
+  NoSSLSupport = Class.new(ResponseError)
+  NoSimpleConsumerAvailable = Class.new(ResponseError)
+
+  RESPONSE_ERROR_CODES = {
+    40401 => TopicNotFound,
+    40402 => PartitionNotFound,
+    40403 => ConsumerInstanceNotFound,
+    40404 => LeaderNotAvailable,
+    40601 => ConsumerFormatMismatch,
+    40901 => ConsumerAlreadySubscribed,
+    40902 => ConsumerAlreadyExists,
+    42201 => KeySchemaMissing,
+    42202 => ValueSchemaMissing,
+    42203 => JsonAvroConversionError,
+    42204 => InvalidConsumerConfig,
+    42205 => InvalidSchema,
+    50001 => ZookeeperError,
+    50002 => KafkaError,
+    50003 => KafkaRetriableError,
+    50101 => NoSSLSupport,
+    50301 => NoSimpleConsumerAvailable,
+  }
+
   def self.logger
     KafkaRest::Logging::logger
   end
@@ -22,16 +58,6 @@ module KafkaRest
   def self.logger=(log)
     KafkaRest::Logging::logger = log
   end
-
-  RESPONSE_ERROR_CODES = {
-    40401 => (TopicNotFound         = Class.new(KafkaRest::ResponseError)),
-    40402 => (PartitionNotFound     = Class.new(KafkaRest::ResponseError)),
-    422   => (UnprocessableEntity   = Class.new(KafkaRest::ResponseError)),
-    50001 => (ZookeeperError        = Class.new(KafkaRest::ResponseError)),
-    50002 => (KafkaError            = Class.new(KafkaRest::ResponseError)),
-    50003 => (RetriableKafkaError   = Class.new(KafkaRest::ResponseError)),
-    50101 => (SSLEndpointError      = Class.new(KafkaRest::ResponseError)),
-  }
 end
 
 require 'kafka_rest/logging'
