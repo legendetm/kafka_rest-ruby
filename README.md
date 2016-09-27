@@ -108,6 +108,34 @@ client.produce(message,
 )
 ```
 
+### Consumers
+
+```ruby
+# Construct a consumer instance in a consumer group
+# "smallest" consumes from beginning of topic,
+# "largest" (default), consumes only messages from the latest offset commit
+consumer = client.consumers('test-consumer-group').create(
+  'test-consumer-instance'
+  "auto.offset.reset": "smallest",
+  format: KafkaRest::Format::AVRO
+)
+
+# Methods for consuming messages
+messages = client.consume(
+  'avro-topic',
+  key_schema: key_schema,
+  value_schema: value_schema
+)
+client.consume('binary-topic') do |message|
+  puts message.key, message.value
+end
+
+# Commit offsets for the given consumer instance
+# The consumer instance will consume messages from this point
+client.commit_offsets
+client.destroy
+```
+
 ### Brokers
 
 ```ruby
