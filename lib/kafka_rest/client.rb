@@ -89,8 +89,6 @@ module KafkaRest
 
     def produce_batch(topic_name, messages, opts = {})
       topic(topic_name).produce_batch(messages, opts)
-    ensure
-      close
     end
   end
 end
