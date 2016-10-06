@@ -63,11 +63,10 @@ module KafkaRest
 
   class AvroSchema < Schema
     def initialize(schema = nil)
-      schema = schema.to_json if schema.is_a?(Hash)
-      if schema.is_a?(String)
-        @schema_string = schema
-      elsif schema.is_a?(Integer)
+      if schema.is_a?(Integer)
         @id = schema
+      else
+        @schema_string = schema.to_json if schema
       end
     end
 
