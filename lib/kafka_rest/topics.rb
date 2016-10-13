@@ -51,7 +51,7 @@ module KafkaRest
       response = client.request(:get, path)
       self.configs = response.fetch(:configs)
       self.partitions = response.fetch(:partitions).map do |part|
-        Partition.new(client, self, part.partition, part)
+        Partition.new(client, self, part.fetch(:partition), part)
       end
       self
     end
