@@ -34,7 +34,6 @@ module KafkaRest
       @http ||= begin
         http = Net::HTTP.new(endpoint.host, endpoint.port)
         http.use_ssl = endpoint.scheme == 'https'
-        http.start
         http
       end
     end
