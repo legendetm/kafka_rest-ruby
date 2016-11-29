@@ -1,4 +1,5 @@
 require 'base64'
+require 'set'
 
 module KafkaRest
   module ContentType
@@ -84,11 +85,16 @@ module KafkaRest
   end
 
   class BinarySchema < Schema
+    ALLOWED_TYPES = Set.new([NilClass, String]).freeze
+
     def format
       Format::BINARY
     end
 
     def to_kafka(value)
+      if !ALLOWED_TYPES.include?(value.class)
+        raise 'Binary schema only accepts strings/nulls'
+      end
       Base64.strict_encode64(value) if value
     end
 
