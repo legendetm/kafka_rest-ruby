@@ -226,3 +226,7 @@ end
 ```ruby
 client.brokers.list
 ```
+
+#### Credits
+
+Originally forked from https://github.com/yagnik/kafka_rest
