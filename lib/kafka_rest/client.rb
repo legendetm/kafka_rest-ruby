@@ -60,10 +60,16 @@ module KafkaRest
       case response = http.request(request)
       when Net::HTTPSuccess
         begin
-          if response.body
+          body = if response.body
             JSON.parse(response.body, symbolize_names: true)
           else
             {}
+          end
+
+          if opts[:include_raw_response]
+            {raw_response: response, parsed_body: body}
+          else
+            body
           end
         rescue JSON::ParserError => e
           raise InvalidResponse, "Invalid JSON in response: #{e.message}"

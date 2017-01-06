@@ -22,10 +22,14 @@ module KafkaRest
       body = default_options.merge(options).merge({ name: name })
       KafkaRest.logger.info("Creating consumer #{name} in group #{group}")
 
-      response = client.request(:post, path, body: body)
+      envelope = client.request(:post, path, body: body, include_raw_response: true)
+      response = envelope[:parsed_body]
       instance_id, base_uri = response[:instance_id], response[:base_uri]
+      cookie = envelope[:raw_response]['Set-Cookie']
 
-      temp_client = Client.new(base_uri, client.username, client.password)
+      headers = {}
+      headers['Cookie'] = cookie if cookie
+      temp_client = Client.new(base_uri, client.username, client.password, headers)
       Consumer.new(temp_client, group, base_uri, instance_id)
     end
   end
