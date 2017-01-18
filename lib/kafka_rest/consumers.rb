@@ -30,18 +30,19 @@ module KafkaRest
       headers = {}
       headers['Cookie'] = cookie if cookie
       temp_client = Client.new(base_uri, client.username, client.password, headers)
-      Consumer.new(temp_client, group, base_uri, instance_id)
+      Consumer.new(temp_client, group, base_uri, instance_id, format: body[:format])
     end
   end
 
   class Consumer
-    attr_reader :client, :group, :base_uri, :instance_id
+    attr_reader :client, :group, :base_uri, :instance_id, :options
 
     CommitMetadata = Struct.new(:topic, :partition, :consumed, :committed)
 
-    def initialize(client, group, base_uri, instance_id)
+    def initialize(client, group, base_uri, instance_id, options = {})
       @client, @group = client, group
       @base_uri, @instance_id = base_uri, instance_id
+      @options = options
     end
 
     def path
@@ -69,10 +70,8 @@ module KafkaRest
 
     def consume(topic, options = {}, &block)
       KafkaRest.logger.info("Consuming messages from topic #{topic} with consumer #{instance_id} in group #{group}")
-      schema_pair = Schema.to_pair(
-        value_schema: options[:value_schema],
-        key_schema: options[:key_schema]
-      )
+      schema = Schema.from_format(self.options[:format])
+      schema_pair = Schema.to_pair(value_schema: schema, key_schema: schema)
 
       response = client.request(
         :get,
