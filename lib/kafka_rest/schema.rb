@@ -14,23 +14,13 @@ module KafkaRest
     JSON = 'json'
   end
 
-  FORMAT_TO_CONTENT_TYPE = {
-    Format::AVRO => ContentType::AVRO,
-    Format::BINARY => ContentType::BINARY,
-    Format::JSON => ContentType::JSON,
-  }
-
   SchemaPair = Struct.new(:value_schema, :key_schema)
 
   class Schema
     attr_accessor :id, :schema_string
 
     def content_type
-      FORMAT_TO_CONTENT_TYPE[format]
-    end
-
-    def format
-      raise NotImplementedError
+      SCHEMA_TO_CONTENT_TYPE[self.class]
     end
 
     def from_kafka(value)
@@ -43,6 +33,10 @@ module KafkaRest
 
     def self.default
       BinarySchema
+    end
+
+    def self.from_format(format)
+      FORMAT_TO_SCHEMA.fetch(format, default).new
     end
 
     def self.to_pair(key_schema: nil, value_schema: nil)
@@ -71,10 +65,6 @@ module KafkaRest
       end
     end
 
-    def format
-      Format::AVRO
-    end
-
     def from_kafka(value)
       value
     end
@@ -86,10 +76,6 @@ module KafkaRest
 
   class BinarySchema < Schema
     ALLOWED_TYPES = Set.new([NilClass, String]).freeze
-
-    def format
-      Format::BINARY
-    end
 
     def to_kafka(value)
       if !ALLOWED_TYPES.include?(value.class)
@@ -104,10 +90,6 @@ module KafkaRest
   end
 
   class JsonSchema < Schema
-    def format
-      Format::JSON
-    end
-
     def from_kafka(value)
       value
     end
@@ -116,4 +98,16 @@ module KafkaRest
       value
     end
   end
+
+  SCHEMA_TO_CONTENT_TYPE = {
+    AvroSchema => ContentType::AVRO,
+    BinarySchema => ContentType::BINARY,
+    JsonSchema => ContentType::JSON,
+  }
+
+  FORMAT_TO_SCHEMA = {
+    Format::AVRO => AvroSchema,
+    Format::BINARY => BinarySchema,
+    Format::JSON => JsonSchema,
+  }
 end

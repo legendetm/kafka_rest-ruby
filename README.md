@@ -133,8 +133,8 @@ consumer2 = consumer_group.create(
 # Methods for consuming messages. You can specify a block which processes
 # messages one by one, or retrieve the messages in bulk
 
-messages = consumer1.consume('avro-topic', key_schema: ks, value_schema: vs)
-consumer2.consume('avro-topic', key_schema: ks, value_schema: vs) do |message|
+messages = consumer1.consume('avro-topic')
+consumer2.consume('avro-topic') do |message|
   puts message.key, message.value
 end
 
