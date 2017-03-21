@@ -57,35 +57,25 @@ module KafkaRest
       request.basic_auth(username, password) if username && password
       request.body = JSON.dump(opts[:body]) if opts[:body]
 
+      # There are 3 cases to handle here:
+      # 1. Success response can be assumed to be from Kafka REST Proxy
+      # 2. Error from REST Proxy (4xx/5xx with correct content type)
+      # 3. Error from outside REST Proxy (4xx/5xx with wrong content type)
       case response = http.request(request)
       when Net::HTTPSuccess
-        begin
-          body = if response.body
-            JSON.parse(response.body, symbolize_names: true)
-          else
-            {}
-          end
-
-          if opts[:include_raw_response]
-            {raw_response: response, parsed_body: body}
-          else
-            body
-          end
-        rescue JSON::ParserError => e
-          raise InvalidResponse, "Invalid JSON in response: #{e.message}"
+        if block_given?
+          yield response
+        else
+          response.body ? JSON.parse(response.body, symbolize_names: true) : {}
         end
-      when Net::HTTPForbidden
-        message = username.nil? ? "Unauthorized" : "User `#{username}` failed to authenticate"
-        raise UnauthorizedRequest.new(response.code.to_i, message)
       else
-        response_data = begin
-          JSON.parse(response.body, symbolize_names: true)
-        rescue JSON::ParserError => e
-          raise InvalidResponse, "Invalid JSON in response: #{e.message}"
+        content_type = response.content_type
+        if content_type && content_type.start_with?('application/vnd.kafka')
+          response_data = JSON.parse(response.body, symbolize_names: true)
+          error_class = RESPONSE_ERROR_CODES[response_data[:error_code]] || ResponseError
+          raise error_class.new(response_data[:error_code], response_data[:message])
         end
-
-        error_class = RESPONSE_ERROR_CODES[response_data[:error_code]] || ResponseError
-        raise error_class.new(response_data[:error_code], response_data[:message])
+        response.error!
       end
     end
 

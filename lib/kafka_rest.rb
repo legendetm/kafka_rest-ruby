@@ -1,15 +1,12 @@
 require 'kafka_rest/version'
 
 module KafkaRest
-  InvalidResponse = Class.new(StandardError)
-  UnauthorizedRequest = Class.new(StandardError)
-
   class ResponseError < StandardError
     attr_reader :code
 
     def initialize(code, message)
       @code = code
-      super("#{message} (error code #{code})")
+      super("#{code} #{message}")
     end
   end
 
