@@ -4,3 +4,7 @@ preset:
   type: library
   language: ruby
   package: kafka_rest
+pipeline:
+  build:
+    arguments:
+      - GEMFURY_TOKEN
