@@ -1,0 +1,6 @@
+version: '5'
+slack_channel: '#kafka'
+preset:
+  type: library
+  language: ruby
+  package: kafka_rest
