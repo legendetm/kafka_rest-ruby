@@ -1,5 +1,6 @@
 version: '5'
 slack_channel: '#kafka'
+business_unit: 'dataeng'
 preset:
   type: library
   language: ruby
