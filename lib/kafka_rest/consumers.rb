@@ -26,7 +26,9 @@ module KafkaRest
         [JSON.parse(resp.body, symbolize_names: true), resp.get_fields('Set-Cookie')]
       end
       cookie = Array(set_cookie).map { |sc| sc.split('; ')[0] }.join('; ')
-      instance_id, base_uri = response[:instance_id], response[:base_uri]
+      instance_id, base_uri = response[:instance_id], URI(response[:base_uri])
+      base_uri.scheme = 'https' if client.http.use_ssl?
+      base_uri = base_uri.to_s
 
       headers = {}
       headers['Cookie'] = cookie if !(cookie.nil? || cookie.empty?)
