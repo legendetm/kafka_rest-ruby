@@ -3,9 +3,9 @@ require 'set'
 
 module KafkaRest
   module ContentType
-    AVRO = 'application/vnd.kafka.avro.v1+json'
-    JSON = 'application/vnd.kafka.json.v1+json'
-    BINARY = 'application/vnd.kafka.binary.v1+json'
+    AVRO = 'application/vnd.kafka.avro.v2+json'
+    JSON = 'application/vnd.kafka.json.v2+json'
+    BINARY = 'application/vnd.kafka.binary.v2+json'
   end
 
   module Format
