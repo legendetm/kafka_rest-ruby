@@ -6,12 +6,13 @@ module KafkaRest
     DEFAULT_ACCEPT_HEADER = 'application/vnd.kafka.v1+json, application/vnd.kafka+json; q=0.9, application/json; q=0.8'
     DEFAULT_CONTENT_TYPE_HEADER = 'application/vnd.kafka.v1+json'
 
-    attr_reader :endpoint, :username, :password, :headers
+    attr_reader :endpoint, :username, :password, :headers, :ssl_options
 
-    def initialize(endpoint, username = nil, password = nil, headers = {})
+    def initialize(endpoint, username = nil, password = nil, headers = {}, ssl_options = {})
       @endpoint = URI(endpoint)
       @username, @password = username, password
       @headers = headers
+      @ssl_options = ssl_options
     end
 
     def topic(name)
@@ -34,6 +35,9 @@ module KafkaRest
       @http ||= begin
         http = Net::HTTP.new(endpoint.host, endpoint.port)
         http.use_ssl = endpoint.scheme == 'https'
+        http.use_ssl? && ssl_options.slice(:ca_path, :ca_file, :cert, :key, :cert_store).each do |method, value|
+          http.public_send("#{method}=", value) if value
+        end
         http
       end
     end
